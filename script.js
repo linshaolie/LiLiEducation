@@ -18,14 +18,18 @@ const menuToggle = document.getElementById('menu-toggle');
 const drawerBackdrop = document.getElementById('drawer-backdrop');
 const mobileLayout = window.matchMedia('(max-width: 880px)');
 const SIDEBAR_STORAGE_KEY = 'lili-book-sidebar-collapsed';
+const CURRENT_PAGE_STORAGE_KEY = 'lili-book-current-page';
 let current = 0;
 let last = 0;
 let sidebarPreferenceCollapsed = readStoredSidebarPreference();
 const pages = buildPages(source);
+const initialPage = readStoredCurrentPage();
 renderNav();
 renderDots();
 applySidebarPreference();
-showPage(0, 'next');
+current = initialPage;
+last = initialPage;
+showPage(initialPage, 'next');
 prevButton.addEventListener('click', function () { goTo(current - 1); });
 nextButton.addEventListener('click', function () { goTo(current + 1); });
 menuToggle.addEventListener('click', function () {
@@ -669,6 +673,7 @@ function showPage(index, direction) {
   progressPercent.textContent = percent + '%';
   progressBar.style.width = percent + '%';
   updateBookChrome(page, index);
+  persistCurrentPage(index);
   chapterList.querySelectorAll('button').forEach(function (button, buttonIndex) {
     if (buttonIndex === index) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
@@ -733,9 +738,25 @@ function readStoredSidebarPreference() {
     return false;
   }
 }
+function readStoredCurrentPage() {
+  try {
+    const stored = Number.parseInt(window.localStorage.getItem(CURRENT_PAGE_STORAGE_KEY) || '', 10);
+    if (!Number.isFinite(stored)) return 0;
+    return Math.max(0, Math.min(pages.length - 1, stored));
+  } catch (error) {
+    return 0;
+  }
+}
 function persistSidebarPreference() {
   try {
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarPreferenceCollapsed));
+  } catch (error) {
+    /* no-op */
+  }
+}
+function persistCurrentPage(index) {
+  try {
+    window.localStorage.setItem(CURRENT_PAGE_STORAGE_KEY, String(index));
   } catch (error) {
     /* no-op */
   }
